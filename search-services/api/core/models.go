@@ -14,3 +14,13 @@ type UpdateStats struct {
 	ComicsFetched int
 	ComicsTotal   int
 }
+
+type SearchResult struct {
+	Id  int
+	Url string
+}
+
+type SearchReply struct {
+	Comics []SearchResult
+	Total  int
+}

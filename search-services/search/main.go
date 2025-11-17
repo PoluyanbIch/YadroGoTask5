@@ -55,7 +55,7 @@ func run(cfg config.Config, log *slog.Logger) error {
 		return fmt.Errorf("failed create Words client: %v", err)
 	}
 
-	//update adapter
+	// update adapter
 	update, err := update.NewClient(cfg.UpdateAddress, log)
 	if err != nil {
 		return fmt.Errorf("failed create Update client: %v", err)

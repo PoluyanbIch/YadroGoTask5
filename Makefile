@@ -1,4 +1,4 @@
-container_runtime := $(shell which podman || which docker)
+container_runtime := docker 
 
 $(info using ${container_runtime})
 

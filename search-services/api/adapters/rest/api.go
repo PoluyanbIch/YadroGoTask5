@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"yadro.com/course/api/config"
 	"yadro.com/course/api/core"
@@ -164,5 +165,67 @@ func NewDropHandler(log *slog.Logger, updater core.Updater, cfg config.Config) h
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func NewSearchHandler(log *slog.Logger, searcher core.Searcher, cfg config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), cfg.HTTPConfig.Timeout)
+		defer cancel()
+		phrase := r.URL.Query().Get("phrase")
+		if phrase == "" {
+			http.Error(w, `{"error": "missing phrase"}`, http.StatusBadRequest)
+			return
+		}
+
+		limit := 10
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			parsed, err := strconv.Atoi(limitStr)
+			if err != nil {
+				http.Error(w, `{"error": "invalid limit format"}`, http.StatusBadRequest)
+				return
+			}
+			if parsed <= 0 {
+				http.Error(w, `{"error": "limit must be positive"}`, http.StatusBadRequest)
+				return
+			}
+			limit = parsed
+		}
+
+		searchResp, err := searcher.Search(ctx, phrase, limit)
+		if err != nil {
+			handleError(w, err)
+			return
+		}
+
+		type Comic struct {
+			ID  int    `json:"id"`
+			URL string `json:"url"`
+		}
+
+		type SearchResponse struct {
+			Comics []Comic `json:"comics"`
+			Total  int     `json:"total"`
+		}
+
+		comics := make([]Comic, len(searchResp.Comics))
+		for i, comic := range searchResp.Comics {
+			comics[i] = Comic{
+				ID:  comic.Id,
+				URL: comic.Url,
+			}
+		}
+
+		resp := SearchResponse{
+			Comics: comics,
+			Total:  len(searchResp.Comics),
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		encoder := json.NewEncoder(w)
+		encoder.SetIndent("", "  ")
+		if err := encoder.Encode(resp); err != nil {
+			log.Error("failed to encode search response", "error", err)
+			http.Error(w, `{"error": "internal server error"}`, http.StatusInternalServerError)
+		}
 	}
 }

@@ -110,11 +110,12 @@ func search(phrase []string, comics []DBComic) map[int]float64 {
 			res[id] += idfCache[word] * calculateTF(word, comicsMap[id].Title) * titleWeight
 			res[id] += idfCache[word] * calculateTF(word, comicsMap[id].Alt) * altWeight
 			res[id] += idfCache[word] * calculateTF(word, comicsMap[id].Description) * descriptionWeight
-			if countSubstringInField(word, comicsMap[id].Title) > 0 {
+			switch {
+			case countSubstringInField(word, comicsMap[id].Title) > 0:
 				countMatchWords++
-			} else if countSubstringInField(word, comicsMap[id].Alt) > 0 {
+			case countSubstringInField(word, comicsMap[id].Alt) > 0:
 				countMatchWords++
-			} else if countSubstringInField(word, comicsMap[id].Description) > 0 {
+			case countSubstringInField(word, comicsMap[id].Description) > 0:
 				countMatchWords++
 			}
 		}
@@ -146,11 +147,12 @@ func calculateIDF(word string, comics []DBComic) float64 {
 		title := comic.Title
 		alt := comic.Alt
 		description := comic.Description
-		if countSubstringInField(word, title) > 0 {
+		switch {
+		case countSubstringInField(word, title) > 0:
 			num++
-		} else if countSubstringInField(word, alt) > 0 {
+		case countSubstringInField(word, alt) > 0:
 			num++
-		} else if countSubstringInField(word, description) > 0 {
+		case countSubstringInField(word, description) > 0:
 			num++
 		}
 	}
