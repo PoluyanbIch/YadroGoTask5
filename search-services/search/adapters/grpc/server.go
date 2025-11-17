@@ -27,7 +27,7 @@ func (s *Server) Ping(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, erro
 }
 
 func (s *Server) Search(ctx context.Context, req *searchpb.SearchRequest) (*searchpb.SearchReply, error) {
-	comics, err := s.service.Search(ctx, req.Phrase)
+	comics, err := s.service.Search(ctx, req.Phrase, int(req.Limit))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "search error: %v", err)
 	}

@@ -30,14 +30,16 @@ func New(log *slog.Logger, address string) (*DB, error) {
 
 func (db *DB) Add(ctx context.Context, comics core.Comics) error {
 	query := `
-			INSERT INTO comics (id, url, words)
-			VALUES ($1, $2, $3)
+			INSERT INTO comics (id, url, title, description, alt)
+			VALUES ($1, $2, $3, $4, $5)
 			ON CONFLICT (id) 
 			DO UPDATE SET 
 				url = EXCLUDED.url,
-				words = EXCLUDED.words
+				title = EXCLUDED.title,
+				description = EXCLUDED.description,
+				alt = EXCLUDED.alt
 	`
-	_, err := db.conn.ExecContext(ctx, query, comics.ID, comics.URL, comics.Words)
+	_, err := db.conn.ExecContext(ctx, query, comics.ID, comics.URL, comics.Title, comics.Description, comics.Alt)
 	if err != nil {
 		db.log.Error("db.add error", "error", err)
 		return err
@@ -51,14 +53,14 @@ func (db *DB) Stats(ctx context.Context) (core.DBStats, error) {
 			COUNT(*) as comics_fetched,
 			COALESCE(SUM(
 				CASE 
-					WHEN jsonb_typeof(words) = 'object' THEN 
-						(SELECT SUM((value::text)::int) FROM jsonb_each_text(words))
+					WHEN jsonb_typeof(description) = 'object' THEN 
+						(SELECT SUM((value::text)::int) FROM jsonb_each_text(description))
 					ELSE 0
 				END
 			), 0) as words_total,
 			(SELECT COUNT(DISTINCT key) 
-			FROM comics, jsonb_each_text(words) 
-			WHERE jsonb_typeof(words) = 'object'
+			FROM comics, jsonb_each_text(description) 
+			WHERE jsonb_typeof(description) = 'object'
 			) as words_unique
 		FROM comics
 	`

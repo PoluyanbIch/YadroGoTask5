@@ -73,19 +73,41 @@ func (s *Service) Update(ctx context.Context) (err error) {
 					s.log.Error("xkcd.get error", "error", err)
 					return
 				}
-				words, err := s.words.Norm(ctx, xkcdComics.Title+" "+xkcdComics.Description)
+
+				description, err := s.words.Norm(ctx, xkcdComics.Description)
 				if err != nil {
-					s.log.Error("words.norm error", "error", err)
+					s.log.Error("words.norm description error", "error", err)
 					return
 				}
-				wordsMap := make(map[string]int)
-				for _, w := range words {
-					wordsMap[w]++
+				alt, err := s.words.Norm(ctx, xkcdComics.Alt)
+				if err != nil {
+					s.log.Error("words.norm alt error", "error", err)
+					return
+				}
+				title, err := s.words.Norm(ctx, xkcdComics.Title)
+				if err != nil {
+					s.log.Error("words.norm title error", "error", err)
+					return
+				}
+
+				descriptionMap := make(map[string]int)
+				for _, w := range description {
+					descriptionMap[w]++
+				}
+				altMap := make(map[string]int)
+				for _, w := range alt {
+					altMap[w]++
+				}
+				titleMap := make(map[string]int)
+				for _, w := range title {
+					titleMap[w]++
 				}
 				comics := Comics{
-					ID:    xkcdComics.ID,
-					URL:   xkcdComics.URL,
-					Words: wordsMap,
+					ID:          xkcdComics.ID,
+					URL:         xkcdComics.URL,
+					Description: descriptionMap,
+					Alt:         altMap,
+					Title:       titleMap,
 				}
 
 				comicsChan <- comics

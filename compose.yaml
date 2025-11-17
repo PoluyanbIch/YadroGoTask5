@@ -48,12 +48,36 @@ services:
       - UPDATE_ADDRESS=:8080
       - DB_ADDRESS=postgres://postgres:password@postgres:5432/postgres
       - XKCD_URL=https://xkcd.com
-      - XKCD_CONCURRENCY=2
+      - XKCD_CONCURRENCY=50
       - WORDS_ADDRESS=words:8080
+      - XKCD_TIMEOUT=60s
     depends_on:
       postgres:
         condition: service_healthy
       words:
+        condition: service_started
+  search:
+    image: search:latest
+    build:
+      context: search-services
+      dockerfile: Dockerfile.search
+    container_name: search
+    restart: unless-stopped
+    ports:
+      - 28083:8080
+    volumes:
+      - ./search-services/search/config.yaml:/config.yaml
+    environment:
+      - SEARCH_ADDRESS=:8080
+      - UPDATE_ADDRESS=update:8080
+      - WORDS_ADDRESS=words:8080
+      - DB_ADDRESS=postgres://postgres:password@postgres:5432/postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      words:
+        condition: service_started
+      update:
         condition: service_started
 
   tests:

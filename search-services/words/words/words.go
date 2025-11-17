@@ -16,10 +16,22 @@ func Norm(phrase string) []string {
 	})
 	for _, w := range splitted {
 		w := strings.ToLower(w)
+		if !isEnglishWord(w) {
+			continue
+		}
 		if english.IsStopWord(w) {
 			continue
 		}
 		words[english.Stem(w, false)] = true
 	}
 	return slices.Collect(maps.Keys(words))
+}
+
+func isEnglishWord(word string) bool {
+	for _, r := range word {
+		if !unicode.Is(unicode.Latin, r) {
+			return false
+		}
+	}
+	return len(word) > 0
 }

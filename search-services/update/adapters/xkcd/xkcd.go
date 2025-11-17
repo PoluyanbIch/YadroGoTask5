@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -47,20 +48,32 @@ func (c Client) Get(ctx context.Context, id int) (core.XKCDInfo, error) {
 	if resp.StatusCode != http.StatusOK {
 		return core.XKCDInfo{}, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return core.XKCDInfo{}, fmt.Errorf("read response body: %v", err)
+	}
 	var res struct {
 		ID          int    `json:"num"`
 		URL         string `json:"img"`
 		Title       string `json:"title"`
 		Description string `json:"transcript"`
+		Alt         string `json:"alt"`
+		SafeTitle   string `json:"safe_title"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return core.XKCDInfo{}, err
+	if err := json.Unmarshal(bodyBytes, &res); err != nil {
+		c.log.Error("JSON decode error", "id", id, "body", string(bodyBytes), "error", err)
+		return core.XKCDInfo{}, fmt.Errorf("decode Json: %v", err)
+	}
+	title := res.Title
+	if title == "" {
+		title = res.SafeTitle
 	}
 	return core.XKCDInfo{
 		ID:          res.ID,
 		URL:         res.URL,
-		Title:       res.Title,
+		Title:       title,
 		Description: res.Description,
+		Alt:         res.Alt,
 	}, nil
 }
 

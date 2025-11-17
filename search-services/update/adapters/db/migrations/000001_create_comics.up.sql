@@ -1,5 +1,7 @@
 CREATE TABLE comics (
     id INTEGER PRIMARY KEY,
     url TEXT NOT NULL,
-    words JSONB NOT NULL DEFAULT '{}'
+    title JSONB NOT NULL DEFAULT '{}',
+    alt JSONB NOT NULL DEFAULT '{}',
+    description JSONB NOT NULL DEFAULT '{}'
 );
